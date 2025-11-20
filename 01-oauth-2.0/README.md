@@ -1,5 +1,6 @@
 # OAuth 2.0: The Product Manager's Guide
-A comprehensive guide to understanding, implementing, and measuring OAuth 2.0, bridging the gap between technical implementation and product strategy.
+
+###### A comprehensive guide to understanding, implementing, and measuring OAuth 2.0, bridging the gap between technical implementation and product strategy.
 ---
 
 ## 1. The Layman Explanation (The "Why")
