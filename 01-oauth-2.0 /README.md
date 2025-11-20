@@ -141,33 +141,39 @@ As a PM, "scope" is your job. You decide the minimum set of permissions your app
     * **Result:** Pinterest hit **10 million monthly unique visitors** faster than any standalone site in history (Jan 2012).
 
 ### Failure: Cambridge Analytica (The Risk)
-* **The Situation:** A quiz app called "This Is Your Digital Life" used "Login with Facebook."
-* **The "Scope" Mistake:** The app asked for `user_friends` permission. Back then, this allowed the app to scrape data not just from the user, but *their friends too*.
-* **The Fall:** Millions of users had data harvested without consent. Facebook locked down their APIs.
-* **The Product Impact:** Thousands of startups that relied on that specific "Friend Graph" scope died overnight because Facebook revoked it globally.
-* **PM Lesson:** **Platform Risk.** If your entire product depends on an OAuth Scope that the provider might revoke, you are building on rented land.
-
+* **The App:** "This Is Your Digital Life" (Launched in 2013 by researcher Aleksandr Kogan).
+* **The Value Prop:** Users took a psychological quiz to generate a "Big 5 Personality Profile."
+* **The Adoption:** ~300,000 users signed up via "Login with Facebook."
+* **The "Scope" Mistake:**
+    * The app requested the `user_friends` scope.
+    * **Crucial Context:** In Facebook's API v1.0 (active until 2014), this scope allowed an app to read data **not just from the user, but from their entire friend network** (Friends' likes, birthdays, locations) without the friends' consent.
+* **The Leaky Bucket:** Even though only 300k people consented, the app harvested data from **87 million friends** who never even knew the app existed.
+* **The Product Impact:**
+    * **For Facebook:** Fined $5 billion by the FTC. They deprecated the API overnight.
+    * **For Startups (The P0 Event):** Thousands of apps (e.g., Tinder, Hinge, Bumble) that relied on "Friends of Friends" logic broke instantly. Entire business models built on the "Social Graph" API evaporated.
+* **Citation:** [The New York Times: How Cambridge Analytica Harvested Facebook Data](https://www.nytimes.com/2018/03/17/us/politics/cambridge-analytica-trump-campaign.html)
 ---
 
 ## 6. Metrics: Tracking OAuth in Your Funnel
 
-As a PM, "It works" isn't a metric. Here is how you measure it.
+Implementing OAuth is not enough; it must be tracked as part of the funnel.
 
 ### A. The "Consent Funnel" (Conversion)
-Track the conversion rate at each step:
-1.  **Login Intent:** User clicks "Sign in with Google."
-2.  **Provider Redirect:** User is successfully sent to Google.
-3.  **Consent Success:** User clicks "Allow" (vs. "Cancel").
-4.  **Token Exchange:** Your server successfully swaps the code for a token.
-5.  **Login Success:** User lands on the dashboard.
+* **1. Login Intent (Click):** User clicks "Sign in with Google." (Trackable via Click Event).
+* **2. The Black Box (Provider Redirect):** User is on Google's page. You **cannot** track what happens here (time spent, hesitation).
+* **3. The Return (Callback):** User returns to your site.
+    * **Success:** They return with a Code (Consent Granted).
+    * **Failure:** They return with an Error (Consent Denied).
+    * **Abandonment:** They never return (Window Closed).
+* **4. Token Exchange:** Your server swaps the code for a token.
 
-**The "Killer" Metric: Consent Drop-off Rate**
-* **Formula:** `(Users who reached step 3) - (Users who reached step 4) / (Users who reached step 3)`
-* **PM Insight:** If 50% of users click "Login" but bail at the "Consent Screen," you are asking for too many permissions.
+**Key Metric:** **Consent Drop-off Rate**.
+* Formula: `(Step 1 Clicks - Step 3 Returns) / Step 1 Clicks`
+* Insight: A high drop-off means your Scope request is scaring users away.
 
 ### B. The Health Metrics (Reliability)
-1.  **Token Refresh Failure Rate:** How often does your backend try to refresh a token and fail (getting a 401)? If this spikes, users are getting randomly logged out. That is a **P0 Bug** (Churn risk).
-2.  **Latency (Time-to-Login):** OAuth involves 3 HTTP hops. If this takes >5 seconds, users on mobile will close the app.
+1.  **Token Refresh Failure Rate:** How often does your backend try to refresh a token and fail (getting a 401)? If this spikes, users are getting randomly logged out. That is a **P0 Bug** (Churn risk). (If 1% of refreshes fail, that's okay. If 20% fail, you have a major bug (P0) because 1 in 5 users are getting kicked out of the app randomly)
+2.  **Latency (Time-to-Login):** OAuth involves 3 HTTP hops. If this takes >5 seconds, users on mobile will close the app. (Good Latency (< 2 seconds): Click -> Blink -> You're logged in. It feels instant, Bad Latency (> 10 seconds): Click -> Wait... Wait... Screen is white... "Is it broken?" -> User Closes App and will uninstall it before they even see the home screen.)
 
 ### C. The RCA (Root Cause Analysis) Cheat Sheet
 Scenario: "Login Success" drops by 10% this week.
@@ -178,9 +184,9 @@ Scenario: "Login Success" drops by 10% this week.
 
 ---
 
-## 7. Glossary for Tech Meetings
+## 7. Glossary
 
-* **CAC (Customer Acquisition Cost):** How much money you spend to get one new user. OAuth lowers this by reducing sign-up friction (5 minutes -> 5 seconds).
+* **CAC (Customer Acquisition Cost):** How much money you spend to get one new user. OAuth lowers this by reducing sign-up friction (5 minutes -> 5 seconds), (Formula = Total marketing spend / New Customers).
 * **The Empty State Problem:** The "Ghost Town" effect of a new account. OAuth solves this by importing friends/data so the app feels "lived in" immediately.
 * **P0 Bug (Priority Zero):** "Drop everything and fix this NOW." Example: Users cannot log in.
 * **TOS (Terms of Service):** The legal rules. If you violate TOS (like storing data too long), they revoke your API keys, and your product dies.
