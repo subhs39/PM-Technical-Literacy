@@ -82,7 +82,33 @@ When a user clicks "Pay" twice, modern products (e.g., Stripe Checkout or well-b
 | **4** | Jane clicks back and somehow clicks **Pay** again. | **Retry:** App sends Request #2 with the **SAME** `Key: order_505` (because she is still on checkout for Order#505). | "Loading..." (Again). | 
 | **5** | CoolKicks receives Request #2. | 1\. **Redis Check:** Key `order_505` exists. <br> 2. **Lookup:** Finds the saved "200 OK" from Step 2. <br> 3. **Action:** Returns that saved response immediately. **Does NOT call Stripe.** | "Payment Successful!" | 
 
-## 5. The Expiry: The 24-Hour Rule
+## 5. Financial Implication: What if we didn't use Redis?
+
+If we checked the Main Database (SQL) for every duplicate instead of using Redis:
+
+### Latency (The "Black Friday" Crash):
+
+* SQL queries are relatively slow (10-50ms) compared to Redis (microseconds).
+
+* Checking the database for every single click adds massive load. During high-traffic events like Black Friday, this extra load can crush the database, causing the entire checkout system to freeze or crash.
+
+### Race Conditions (The Double Charge):
+
+* **Scenario:** Two requests from the same user hit the server at the exact same millisecond.
+
+* **The Flaw:** Both threads query the SQL database: "Does Order #505 exist?"
+
+* **The Result:** Both get the answer: "No, it doesn't."
+
+* **The Failure:** Both threads proceed to charge the card. The user is charged twice because the database couldn't lock the first request fast enough.
+
+### Redis Atomicity (The Solution):
+
+* Redis is single-threaded. This means it physically cannot process two "Writes" to the same key at the same time. It forces them to get in line.
+
+* It acts as the perfect "Traffic Cop," ensuring that only one request can claim the lock, even if millions arrive simultaneously.
+
+## The Expiry: The 24-Hour Rule
 
 **Question:** How long does Redis remember `order_505`?
 **Answer:** Typically **24 Hours**.
@@ -109,7 +135,6 @@ When the server writes to Redis, it sets a **Time To Live (TTL)**.
 SET order_505 "{status: success}" EX 86400
 # EX 86400 = Expire in 86,400 seconds (1 Day)
 ```
-
 
 ### PM Takeaway (The "Why")
 Why should you care about Idempotency-Keys and Redis?
