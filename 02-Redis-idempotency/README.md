@@ -1,6 +1,6 @@
 # How does Redis save tons of Ops money?
 
-**The Problem:** 
+### **The Problem:** 
 
 Jane sends a payment request on CoolKicks.com when purchasing her new sneakers.
 
